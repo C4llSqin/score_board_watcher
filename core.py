@@ -23,6 +23,7 @@ class CompoundDigit():
         self.ref_list = ref_list
         self.name = name
         self.text_ref = text_ref
+        self.last_valid_value = 0
         self.initalize()
         DIGITS.add(self)
         
@@ -63,17 +64,21 @@ class CompoundDigit():
 class TimerCompoundDigit(CompoundDigit):
     TYPE="time"
     def process_number(self):
+        if len(self.digits) == 0: return -1
         if self.digits[-1].number_value == -1: # down to seconds
             i = 0
             val = 0
             while True:
                 digit = self.digits[i].number_value
+                if digit == -2: return -1
                 if digit == -1: break
                 val *= 10
                 val += digit
+                i += 1
             return (val / 10)
         else:
             num = super().process_number()
+            if num == -1: return -1
             mins = num // 100
             secs = num % 100
             return ((mins * 60) + secs)
@@ -229,7 +234,7 @@ def make_gui(cfg: dict[str, any]):
                                sg.Tab("Networking", net_tab_layout),
                                sg.Tab('System', system_tab_layout)]], key='-TAB_GROUP-', expand_x=True, expand_y=True)]]
 
-    window = sg.Window('SSN Computer Vision Scoreboard Vmix Intergration', layout)
+    window = sg.Window('SSN Computer Vision Scoreboard Vmix Intergration', layout, keep_on_top=True)
                 # [sg.Text('SSN S.A.B.E.R.', size=(38, 1), justification='center', font=("Helvetica", 16), relief=sg.RELIEF_RIDGE, k='-TEXT HEADING-', enable_events=True)]]
     return window
 
@@ -238,8 +243,8 @@ def gui_code(vision_thread: ThreadContianer, net_thread: ThreadContianer, vision
     while True:
         event, values = window.read(25)
         time.sleep(0)
-        if event != sg.TIMEOUT_EVENT:
-            print(event)
+        # if event != sg.TIMEOUT_EVENT:
+        #     print(event)
         if event == sg.WIN_CLOSED: 
             vision_thread.kill()
             net_thread.kill()
@@ -553,7 +558,7 @@ def gui_code(vision_thread: ThreadContianer, net_thread: ThreadContianer, vision
             vision.REGIONS.clear()
             vision.ACTIVE_REGIONS.clear()
             DIGITS.clear()
-            vision_core.initalize_channel(vision.cv.imread("8888.jpg"))#new_cfg["input"]["camera_number"])
+            vision_core.initalize_channel(new_cfg["input"]["camera_number"])
             network_controller.enabled = True
             network_controller.set_url(new_cfg["output"]["weburl"])
             network_controller.input_channel = new_cfg["output"]["input_id"]
@@ -575,9 +580,8 @@ def gui_code(vision_thread: ThreadContianer, net_thread: ThreadContianer, vision
                 elif specific_cfg["type"] == "period": QuaterCompoundDigit(numbers, component_name, specific_cfg["text_title"])
                 else: CompoundDigit(numbers, component_name, specific_cfg["text_title"])
             if enabled: vision_thread.spawn()
-
+            cfg = new_cfg
         if event == "-SAVE_CONFIG-":
-            vision_core.img_channel = 0
             config_obj = {
                 "input": {
                     "camera_number": vision_core.img_channel
@@ -619,7 +623,7 @@ def main():
     # sys.setswitchinterval(0.005) # FEEL MY MAXIMUM SPEED.
     cfg = load_config("defualtcfg.json")
     log("Initalizing Vision Core, this may take a few secs...")
-    vision_core = vision.VisionCore(vision.cv.imread("8888.jpg"))#cfg["input"]["camera_number"])
+    vision_core = vision.VisionCore(cfg["input"]["camera_number"])
     log("Vision Core done loading")
     output_queue: queue.Queue[tuple[str, str]] = queue.Queue()
     network_controller = net.Vmix_controller(cfg["output"]["weburl"],cfg["output"]["input_id"])
@@ -670,25 +674,9 @@ def main():
         except Exception as e:
             log(f"Network error, {e}")
         output_queue.task_done()
-    
-    # profiler = cProfile.Profile()
-    # profiler.enable()
-    # vision_function()
-    # profiler.disable()
-    # s = io.StringIO()
-    # ps = pstats.Stats(profiler, stream=s).sort_stats('cumulative')
-    # ps.print_stats()
-    # print(s.getvalue())
-    vision_thread = ThreadContianer(vision_function, "Vision Function", True, vison_cleanup)
-    # vision_thread.loop()
-    networking_thread = ThreadContianer(networking_function, "Networking Function", True, None)
-    # vision_thread.thread.join()
-    gui_code(vision_thread, networking_thread, vision_core, network_controller, cfg)
-    # print("Loop Begin")
-    # i = 0
-    # while True:
-    #     i += 1
-    #     time.sleep(1)
-    #     print(f"Loop iter {i}")
 
+    vision_thread = ThreadContianer(vision_function, "Vision Function", True, vison_cleanup)
+    networking_thread = ThreadContianer(networking_function, "Networking Function", True, None)
+    gui_code(vision_thread, networking_thread, vision_core, network_controller, cfg)
+    
 if __name__ == "__main__": main()

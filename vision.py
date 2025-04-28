@@ -456,10 +456,11 @@ class VisionCore():
         returned, capture = False, None
         if isinstance(self.img_channel, np.ndarray): returned, capture = True, self.img_channel.copy()
         else: returned, capture = self.video.read()
-        self.buff = capture.copy()
         if not returned:
             self.video = None
             return False
+        self.buff = capture.copy()
+        # print(capture.shape)
         
         for region in ACTIVE_REGIONS:
             region.do_frame(capture)
@@ -564,56 +565,3 @@ def scan_segments(starting_position: Point, mask: np.ndarray) -> list[Point]:
     bottom_right_digit, bottom_right_x_bounds, bottom_right_y_bounds = center_segment((bottom_right_digit_first_pass[0] + bottom_right_digit_first_pass[1]) // 2, mask)
     
     return [top_digit, center_digit, bottom_digit, top_left_digit, top_right_digit, bottom_left_digit, bottom_right_digit]
-
-    
-
-if __name__ == "__main__":
-    frames = [
-        cv.imread("8888.jpg"),
-        cv.imread("-1930.jpg"),
-        cv.imread("Alt-1930.jpg"),
-        cv.imread("7792.jpg"),
-        cv.imread("330-1.jpg"),
-    ]
-    i = 0
-    vision = VisionCore(frames[i])
-    vision.run_frame()
-    vision.wait_key()
-    # bbox = vision.select_bbox()
-    bbox = [260, 697, 480, 1334]
-    # print(bbox)
-    region = Region("new-region", bbox, val_thresholding=Point((73,100)))
-    while True:
-        vision.run_frame()
-        k = vision.wait_key()
-        
-        if k != -1: break
-    
-    print(region.dump_configuration())
-    number_s = Callback_Number_Manual_Tool(region.mask)
-    number_s.loop()
-    A = Number("A", number_s.points)
-    region.numbers.append(A)
-    number_s = Callback_Number_Auto(region.mask)
-    number_s.loop()
-    B = Number("B", number_s.points)
-    region.numbers.append(B)
-    number_s = Callback_Number_Auto(region.mask)
-    number_s.loop()
-    C = Number("C", number_s.points)
-    region.numbers.append(C)
-    number_s = Callback_Number_Auto(region.mask)
-    number_s.loop()
-    D = Number("D", number_s.points)
-    region.numbers.append(D)
-    
-    while True:
-        vision.run_frame()
-        k = vision.wait_key()
-        
-        if k != -1:
-            i += 1
-            i %= len(frames)
-            vision.initalize_channel(frames[i])
-
-    
