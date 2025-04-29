@@ -152,7 +152,7 @@ def load_config(filepath: str):
         "components": {
         },
         "output": {
-            "weburl": "http://127.0.0.1:8088",
+            "weburl": "http://192.168.1.2:8088",
             "input_id": 3
         }
     }
@@ -234,7 +234,7 @@ def make_gui(cfg: dict[str, any]):
                                sg.Tab("Networking", net_tab_layout),
                                sg.Tab('System', system_tab_layout)]], key='-TAB_GROUP-', expand_x=True, expand_y=True)]]
 
-    window = sg.Window('SSN Computer Vision Scoreboard Vmix Intergration', layout, keep_on_top=True)
+    window = sg.Window('SSN Computer Vision Scoreboard Vmix Intergration', layout, keep_on_top=False)
                 # [sg.Text('SSN S.A.B.E.R.', size=(38, 1), justification='center', font=("Helvetica", 16), relief=sg.RELIEF_RIDGE, k='-TEXT HEADING-', enable_events=True)]]
     return window
 

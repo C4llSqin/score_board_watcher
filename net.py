@@ -12,7 +12,5 @@ class Vmix_controller(): # I didn't need to have this as a seperate file, oh wel
     
     def send_request(self, title: str, value: str):
         print(f"Network Request: {title=} {value=}")
-        if value == "39": 
-            print("breakpoint")
         if self.enabled:
             requests.post(f"{self.url}/API/?Function=SetText&Input={self.input_channel}&SelectedName={title}&Value={value}")

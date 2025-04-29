@@ -440,7 +440,12 @@ class VisionCore():
             if isinstance(self.img_channel, np.ndarray):
                 self.video = None
                 return True
-            self.video = cv.VideoCapture(self.img_channel)
+            self.video = cv.VideoCapture(self.img_channel, cv.CAP_DSHOW)
+            self.video.set(cv.CAP_PROP_FRAME_WIDTH, 1280)
+            self.video.set(cv.CAP_PROP_FRAME_HEIGHT, 720),
+            self.video.set(cv.CAP_PROP_FPS, 60) # Tell the camera to output at 720p with compression.
+            # "This is the only way it could have ended"
+            self.video.set(cv.CAP_PROP_FOURCC, cv.VideoWriter.fourcc('M', 'J', 'P', 'G'))
             return False
         except: 
             log("Unable to Initialize Vision Core")
